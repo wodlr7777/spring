@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board.mapper.BoardMapper">
+	<!-- mapper 인터페이스의 메서드 이름과 id가 일치 해야 한다. -->
+  <!-- 모든 게시글 갖고오기 -->	
+  <select id="selectBoardList" resultType="board.dto.BoardDTO">
+  	select * from board
+  	order by no desc
+  </select>
+  <!-- 게시글 저장 -->
+  <insert id="insertBoard" parameterType="board.dto.BoardDTO" >
+  	<!-- BoardDTO의 Property가 'no' 값을 insert문장 실행전에 세팅한다. -->
+ 	<selectKey keyProperty="no" order="BEFORE" resultType="int">
+ 		select SEQ_BOARD.nextval as no from dual
+ 	</selectKey>
+ 	
+  	insert into board 
+  	values(#{no}, #{title},#{content},#{count},#{writer},sysdate,sysdate)
+  </insert>
+  <!-- 조회수 증가 쿼리 -->
+  <update id="updateBoardCount" parameterType="int">
+  	update board
+  	set count = count+1
+  	where no=#{no}
+  </update>
+  <!-- Detail 조회 -->
+  <select id="selectBoardDetail" resultType="board.dto.BoardDTO">
+  	select * from board
+  	where no=#{no}
+  </select>
+  <!-- 수정하기 -->
+  <update id="updateBoard">
+  	update board
+  	set title=#{title}, content=#{content}, edit_date=sysdate
+  	where no=#{no}
+  </update>
+  <!-- 삭제하기 -->
+  <delete id="deleteBoard">
+  	delete from board
+  	where no=#{no}
+  </delete>
+  <!--다중 파일업로드 처리 -->
+  <insert id="insertBoardFileList" parameterType="board.dto.FileDTO" >
+ 	insert into t_file
+	(no, b_no, file_name, file_path, file_size, reg_date, edit_date, delete_yn) 
+
+	(SELECT SEQ_FILE.nextval, a.* FROM
+  	
+  	(<foreach collection="list" item="item" separator="union all">
+  	SELECT 
+  	#{item.b_no} as b_no,
+  	#{item.file_name} as file_name,
+  	#{item.file_path} as file_path,
+  	#{item.file_size} as file_size,
+	sysdate as reg_date,
+	sysdate as edit_date,
+	'N' as delete_yn
+	FROM dual
+	</foreach>) a )
+
+  </insert>
+ <select id="selectFileList" resultType="board.dto.FileDTO">
+select no,b_no,file_name, ceil(file_size/1024) as file_size from t_file where b_no=#{no} and delete_yn='N'
+</select>
+<select id="downloadfile" resultType="board.dto.FileDTO">
+select * from t_file where no=#{no}
+</select>
+</mapper>
+
+
+
+
+
+
+
